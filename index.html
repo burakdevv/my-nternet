@@ -40,6 +40,22 @@ body{background:#0f172a;color:#e2e8f0;font-family:Inter,sans-serif;overflow:hidd
 .toast{padding:10px 14px;border-radius:8px;font-size:13px;background:#1e293b;border:1px solid #334155;border-left:3px solid #38bdf8;max-width:340px}
 .toast.err{border-left-color:#e11d48}.toast.ok{border-left-color:#22c55e}
 .hidden{display:none!important}
+#intro{position:fixed;inset:0;z-index:100;background:#0f172a;display:grid;place-items:center;transition:opacity .6s,transform .6s}
+#intro.out{opacity:0;transform:scale(1.03);pointer-events:none}
+.grid-bg{position:absolute;inset:0;background-image:linear-gradient(#1e293b 1px,transparent 1px),linear-gradient(90deg,#1e293b 1px,transparent 1px);background-size:40px 40px;animation:pan 8s linear infinite;-webkit-mask-image:radial-gradient(circle,#000 20%,transparent 75%);mask-image:radial-gradient(circle,#000 20%,transparent 75%)}
+@keyframes pan{to{background-position:40px 40px}}
+.intro-in{position:relative;max-width:660px;padding:24px}
+.intro-in h1{font-size:clamp(28px,6vw,52px);font-weight:800;line-height:1.1;letter-spacing:-.03em;margin:18px 0}
+.w,.rise{opacity:0;animation:rise .6s forwards}.w{display:inline-block}
+.r1{animation-delay:1.5s}.r2{animation-delay:2s}.r3{animation-delay:2.4s}.r4{animation-delay:2.8s}.r5{animation-delay:3.3s}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.logo-pop{width:26px;animation:pop .7s cubic-bezier(.2,1.6,.4,1)}@keyframes pop{from{transform:scale(0) rotate(-90deg)}to{transform:none}}
+.steps{margin:14px 0 22px;padding-left:20px;color:#94a3b8;line-height:1.9}
+#pz{border:1px dashed #334155;border-radius:10px;padding:8px;margin-bottom:10px;cursor:crosshair;touch-action:none}
+#pz.ok{border-color:#22c55e}
+#pzc{width:100%;height:90px;background:#0b1222;border-radius:6px;display:block}
+#pzbw{height:4px;background:#0f172a;border-radius:4px;margin-top:6px}#pzb{height:100%;width:0;background:#38bdf8;border-radius:4px;transition:width .1s}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.01s!important;animation-delay:0s!important}}
 </style>
 </head>
 <body>
@@ -77,48 +93,13 @@ function cleanup(){if(chan){sb.removeChannel(chan);chan=null}if(S)clearTimeout(S
 function header(){
   $('#hdr').innerHTML=`<a href="#/" class="flex items-center gap-2">${LOGO}<span class="font-bold tracking-tight">Wenitor <span class="text-oc-accent">Studio</span></span></a>
   <nav class="flex items-center gap-2">
-    <a href="#/projects" class="btn">Projeler</a>
+    <a href="#/repos" class="btn">Repolar</a><a href="#/projects" class="btn">Projeler</a>
     ${user?`<span class="text-sm text-slate-400 hidden sm:inline">@${esc(user.username)}</span><button class="btn" onclick="logout()">Çıkış yap</button>`:`<button class="btn" onclick="openAuth('login')">Giriş yap</button><button class="btn btn-accent" onclick="openAuth('register')">Kayıt ol</button>`}
   </nav>`;
 }
 
 /* ================= KİMLİK DOĞRULAMA ================= */
-function openAuth(mode='login'){
-  const reg=mode==='register';
-  modal(`<h2 class="text-xl font-bold mb-4">${reg?'Hesap oluştur':'Giriş yap'}</h2>
-  ${reg?'<input id="a-u" class="inp" placeholder="Kullanıcı adı" autocomplete="username">':''}
-  <input id="a-e" type="email" class="inp" placeholder="E-posta" autocomplete="email">
-  <input id="a-p" type="password" class="inp" placeholder="Şifre" autocomplete="${reg?'new-password':'current-password'}" onkeydown="if(event.key==='Enter')submitAuth('${mode}')">
-  <div id="a-err" class="text-sm text-oc-accent mb-2 hidden"></div>
-  <button id="a-go" class="btn btn-accent w-full justify-center" onclick="submitAuth('${mode}')">${reg?'Kayıt ol':'Giriş yap'}</button>
-  <p class="text-sm text-slate-400 mt-4 text-center">${reg?'Zaten hesabın var mı?':'Hesabın yok mu?'} <a href="#" class="text-oc-blue" onclick="openAuth('${reg?'login':'register'}');return false">${reg?'Giriş yap':'Kayıt ol'}</a></p>`);
-  setTimeout(()=>$(reg?'#a-u':'#a-e')?.focus(),50);
-}
-async function submitAuth(mode){
-  const err=m=>{const e=$('#a-err');e.textContent=m;e.classList.remove('hidden')};
-  const email=$('#a-e').value.trim().toLowerCase(),pw=$('#a-p').value,un=$('#a-u')?.value.trim();
-  if(!email||!pw)return err('E-posta ve şifre gerekli.');
-  if(mode==='register'&&(!un||un.length<3))return err('Kullanıcı adı en az 3 karakter olmalı.');
-  if(pw.length<6)return err('Şifre en az 6 karakter olmalı.');
-  const btn=$('#a-go');btn.disabled=true;
-  try{
-    const password_hash=await sha(pw,email);
-    if(mode==='register'){
-      const {error}=await supabaseClient.from('app_users').insert([{email,username:un,password_hash}]);
-      if(error){btn.disabled=false;return err(error.code==='23505'?'Bu e-posta veya kullanıcı adı zaten kayıtlı.':error.message)}
-      user={email,username:un};
-    }else{
-      const {data,error}=await supabaseClient.from('app_users').select('*').eq('email',email).eq('password_hash',password_hash);
-      if(error){btn.disabled=false;return err(error.message)}
-      if(!data||!data.length){btn.disabled=false;return err('E-posta veya şifre hatalı.')}
-      user={email:data[0].email,username:data[0].username};
-    }
-    localStorage.setItem('wen_user',JSON.stringify(user));
-    closeModal();header();toast('Hoş geldin, '+user.username,'ok');
-    if(location.hash.startsWith('#/projects'))route();
-  }catch(e){btn.disabled=false;err('Hata: '+e.message)}
-}
-function logout(){user=null;localStorage.removeItem('wen_user');header();toast('Çıkış yapıldı.');route()}
+async function logout(){user=null;localStorage.removeItem('wen_user');header();toast('Çıkış yapıldı.');route()}
 
 /* ================= YÖNLENDİRME ================= */
 function route(){
@@ -127,28 +108,16 @@ function route(){
   if(p==='newsite'||p==='newrepomn')return openEditor(slug);
   if(p==='live')return openLive(slug);
   if(p==='projects')return renderProjects();
+  if(p==='repos')return renderRepos();
+  if(p==='repo')return renderRepo(slug);
+  if(p==='test')return openTest(slug,location.hash.replace(/^#\/?/,'').split('/')[2]);
+  if(p==='postrage')return openSql(location.hash.split('/').pop());
   renderWelcome();
 }
 window.addEventListener('hashchange',route);
-window.addEventListener('load',route);
+window.addEventListener('load',()=>{route();showIntro()});
 
 /* ================= KARŞILAMA ================= */
-function renderWelcome(){
-  const feats=[['⚡','Anında önizleme','HTML, CSS, JS ve resimler yazdıkça sağ panelde birleşir.'],['📡','Canlı yayın','Deploy ettiğin site, Supabase Realtime ile ziyaretçilerde anında güncellenir.'],['🔒','Dosya kilidi','Kritik dosyaları salt-okunur yap, yanlışlıkla bozulmasın.'],['🖼️','Resim desteği','Bilgisayarından resim yükle, Base64 olarak projeye gömülsün.']];
-  $('#app').innerHTML=`<div class="flex-1 overflow-auto"><div class="max-w-5xl mx-auto px-6 py-16">
-    <div class="flex items-center gap-3 mb-8">${LOGO}<span class="text-slate-400 text-sm">Wenitor Inc.</span></div>
-    <h1 class="text-4xl sm:text-6xl font-extrabold tracking-tight leading-tight max-w-3xl">Tarayıcıda kodla, tek tıkla yayınla.</h1>
-    <p class="text-slate-400 mt-5 max-w-xl text-lg">Wenitor Studio'ya hoş geldin. Dosyalarını düzenle, önizle ve canlı bir bağlantıyla paylaş.</p>
-    <div class="flex flex-wrap gap-3 mt-8">
-      <button class="btn btn-accent text-base px-5 py-3" onclick="location.hash='#/newsite/site-${rand()}'">Yeni proje başlat</button>
-      <button class="btn text-base px-5 py-3" onclick="location.hash='#/projects'">Projelerimi aç</button>
-    </div>
-    <div class="grid sm:grid-cols-2 gap-4 mt-14">
-      ${feats.map(f=>`<div class="bg-oc-panel border border-oc-border rounded-xl p-5"><div class="text-2xl mb-2">${f[0]}</div><div class="font-semibold">${f[1]}</div><div class="text-sm text-slate-400 mt-1">${f[2]}</div></div>`).join('')}
-    </div>
-    <p class="text-xs text-slate-500 mt-12">© ${new Date().getFullYear()} Wenitor Inc.</p>
-  </div></div>`;
-}
 
 /* ================= PROJELER (GALERİ) ================= */
 async function renderProjects(){
@@ -475,6 +444,254 @@ async function publish(m,fromModal){
     if(btn){btn.disabled=false;btn.textContent='Yayınla'}
     toast('Yayınlanamadı: '+(e.message||e),'err');
   }
+}
+
+/* =====================================================================
+   v2 — AÇILIŞ ANİMASYONU, PECHTP, REPOLAR, SQL EDİTÖRÜ, TEST ÇALIŞTIRICI
+   ===================================================================== */
+const sqlPath=id=>'#/postrage/sqleditor8764/cplayer_3/gl/webfreesql/main/blob/'+id;
+const nf=m=>{$('#app').innerHTML=`<div class="m-auto text-slate-400">${esc(m)}</div>`};
+const need=()=>{if(user&&user.h)return true;$('#app').innerHTML='<div class="m-auto text-center"><p class="text-slate-400 mb-4">Bu bölüm için giriş yapmalısın.</p><button class="btn btn-accent" onclick="openAuth(\'login\')">Giriş yap</button></div>';return false};
+function cp(t,l){(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast(l+' kopyalandı.','ok'),()=>prompt(l,t))}
+let R=null,Q=null,T=null;
+
+/* ---------- Açılış ---------- */
+function showIntro(){
+  if(sessionStorage.getItem('wen_intro'))return;sessionStorage.setItem('wen_intro','1');
+  const words="my internet artık geliştirici dostu ve bedava!".split(' ').map((w,i)=>`<span class="w" style="animation-delay:${.5+i*.14}s">${w}</span>`).join(' ');
+  const d=document.createElement('div');d.id='intro';
+  d.innerHTML=`<div class="grid-bg"></div><div class="intro-in"><div class="logo-pop">${LOGO}</div><h1>${words}</h1>
+  <p class="rise r1 text-xl font-semibold text-oc-blue">Deploy etmek çok kolay!</p>
+  <ol class="steps"><li class="rise r2">Repo aç</li><li class="rise r3">Sınıf ekle: HTML / Site, Test ya da SQL</li><li class="rise r4">Deploy et veya çalıştır</li></ol>
+  <button class="btn btn-accent rise r5" onclick="closeIntro()">Başla</button></div>`;
+  document.body.appendChild(d);setTimeout(closeIntro,8000);
+}
+function closeIntro(){const d=$('#intro');if(d){d.classList.add('out');setTimeout(()=>d.remove(),600)}}
+
+/* ---------- PECHTP: fare hareketi + tarayıcı kimliği ---------- */
+const PE={pts:[],t0:0,ok:false,busy:false,token:null,device:null};
+async function fingerprint(){
+  const c=document.createElement('canvas');c.width=220;c.height=40;const x=c.getContext('2d');
+  x.textBaseline='top';x.font='16px Arial';x.fillStyle='#e11d48';x.fillRect(5,5,90,25);x.fillStyle='#38bdf8';x.fillText('Wenitor PECHTP ✓',8,8);
+  let gl='';try{const g=document.createElement('canvas').getContext('webgl'),e=g.getExtension('WEBGL_debug_renderer_info');gl=e?g.getParameter(e.UNMASKED_RENDERER_WEBGL):''}catch{}
+  const raw=[navigator.userAgent,(navigator.languages||[]).join(),navigator.platform,navigator.hardwareConcurrency,navigator.deviceMemory,screen.width,screen.height,screen.colorDepth,devicePixelRatio,Intl.DateTimeFormat().resolvedOptions().timeZone,navigator.maxTouchPoints,c.toDataURL(),gl].join('|');
+  return sha(raw,'pechtp');
+}
+function entropy(p){
+  const sp=[],an=[];
+  for(let i=1;i<p.length;i++){const dx=p[i][0]-p[i-1][0],dy=p[i][1]-p[i-1][1],dt=Math.max(1,p[i][2]-p[i-1][2]);sp.push(Math.hypot(dx,dy)/dt);an.push(Math.atan2(dy,dx))}
+  const m=sp.reduce((a,b)=>a+b,0)/sp.length||1e-9,sd=Math.sqrt(sp.reduce((a,b)=>a+(b-m)**2,0)/sp.length);
+  let t=0;for(let i=1;i<an.length;i++)if(Math.abs(an[i]-an[i-1])>.15)t++;
+  return Math.min(1,(sd/m)*.4+(t/Math.max(1,an.length))*.8);
+}
+async function pechtpInit(){
+  Object.assign(PE,{pts:[],ok:false,busy:false,token:null});
+  PE.device=await fingerprint();
+  const z=$('#pz');if(!z)return;
+  const cv=$('#pzc'),cx=cv.getContext('2d');
+  $('#pzs').innerHTML='Cihaz ID: <span class="mono text-oc-blue">'+PE.device.slice(0,12)+'…</span> · fareyi kutuda doğal biçimde gezdir';
+  z.onpointermove=e=>{
+    if(PE.ok||PE.busy)return;
+    const r=cv.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top,t=performance.now();
+    if(!PE.pts.length)PE.t0=t;PE.pts.push([x,y,t]);
+    cx.fillStyle='#38bdf8';cx.fillRect(x*cv.width/r.width-1,y*cv.height/r.height-1,3,3);
+    const prog=Math.min(1,PE.pts.length/40,(t-PE.t0)/1800);$('#pzb').style.width=(prog*100)+'%';
+    if(prog>=1)pechtpVerify();
+  };
+}
+async function pechtpVerify(){
+  PE.busy=true;const st=$('#pzs');st.textContent='Doğrulanıyor…';
+  try{
+    const {data:id,error:e1}=await supabaseClient.rpc('pechtp_begin',{p_device:PE.device});if(e1)throw e1;
+    const p=PE.pts,dur=Math.round(p[p.length-1][2]-PE.t0);
+    const {data:ok,error:e2}=await supabaseClient.rpc('pechtp_verify',{p_id:id,p_device:PE.device,p_points:p.length,p_duration_ms:dur,p_entropy:+entropy(p).toFixed(3),p_webdriver:!!navigator.webdriver});if(e2)throw e2;
+    if(!ok){PE.busy=false;PE.pts=[];$('#pzb').style.width='0';$('#pzc').getContext('2d').clearRect(0,0,999,999);st.textContent='Doğrulanamadı. Fareyi eğrilerle, farklı hızlarda hareket ettir.';return}
+    PE.ok=true;PE.token=id;st.innerHTML='✓ İnsan doğrulandı · Cihaz ID: <span class="mono text-oc-blue">'+PE.device.slice(0,12)+'…</span>';
+    $('#pz').classList.add('ok');$('#a-go').disabled=false;
+  }catch(e){PE.busy=false;st.textContent='Hata: '+(e.message||e)}
+}
+
+/* ---------- Karşılama ---------- */
+function renderWelcome(){
+  const st=[['Repo aç','Tüm projelerini tek bir repoda topla.'],['Sınıf ekle','HTML / Site, Test (JavaScript) veya SQL (5 MB PostgreSQL) seç.'],['Deploy et veya çalıştır','Canlı bağlantı al, SQL\'i anında çalıştır, API\'yi kopyala.']];
+  $('#app').innerHTML=`<div class="flex-1 overflow-auto"><div class="max-w-5xl mx-auto px-6 py-14">
+    <div class="flex items-center gap-3 mb-8">${LOGO}<span class="text-slate-400 text-sm">Wenitor Inc.</span></div>
+    <h1 class="text-4xl sm:text-6xl font-extrabold tracking-tight leading-tight max-w-3xl">my internet artık geliştirici dostu ve bedava.</h1>
+    <p class="text-slate-400 mt-5 max-w-xl text-lg">Deploy etmek çok kolay: repo aç, sınıf ekle, yayınla.</p>
+    <div class="flex flex-wrap gap-3 mt-8"><button class="btn btn-accent text-base px-5 py-3" onclick="createRepo()">Yeni repo</button><button class="btn text-base px-5 py-3" onclick="location.hash='#/repos'">Projelerimi aç</button><button class="btn text-base px-5 py-3" onclick="location.hash='#/newsite/site-${rand()}'">Hızlı site</button></div>
+    <ol class="grid sm:grid-cols-3 gap-4 mt-12">${st.map((s,i)=>`<li class="bg-oc-panel border border-oc-border rounded-xl p-5"><div class="text-oc-accent font-bold mb-1">${i+1}. adım</div><div class="font-semibold">${s[0]}</div><div class="text-sm text-slate-400 mt-1">${s[1]}</div></li>`).join('')}</ol>
+    <div class="grid sm:grid-cols-2 gap-4 mt-4">
+      <div class="bg-oc-panel border border-oc-border rounded-xl p-5"><div class="font-semibold">Ücretsiz 5 MB PostgreSQL</div><div class="text-sm text-slate-400 mt-1">Her SQL projesi kendi şemasında, rastgele ID'li bir bağlantıyla gelir. API, bağlantı, URL ve anahtarlar tek tıkla kopyalanır.</div></div>
+      <div class="bg-oc-panel border border-oc-border rounded-xl p-5"><div class="font-semibold">PECHTP insan doğrulaması</div><div class="text-sm text-slate-400 mt-1">Hesap açarken fare hareketin ve tarayıcı kimliğin sunucuda doğrulanır.</div></div>
+    </div><p class="text-xs text-slate-500 mt-12">© ${new Date().getFullYear()} Wenitor Inc.</p></div></div>`;
+}
+
+/* ---------- Kimlik doğrulama (PECHTP'li) ---------- */
+function openAuth(mode='login'){
+  const reg=mode==='register';
+  modal(`<h2 class="text-xl font-bold mb-4">${reg?'Hesap oluştur':'Giriş yap'}</h2>
+  ${reg?'<input id="a-u" class="inp" placeholder="Kullanıcı adı" autocomplete="username">':''}
+  <input id="a-e" type="email" class="inp" placeholder="E-posta" autocomplete="email">
+  <input id="a-p" type="password" class="inp" placeholder="Şifre" autocomplete="${reg?'new-password':'current-password'}" onkeydown="if(event.key==='Enter')submitAuth('${mode}')">
+  ${reg?'<div id="pz"><canvas id="pzc" width="400" height="90"></canvas><div id="pzbw"><div id="pzb"></div></div><div id="pzs" class="text-xs text-slate-400 mt-2">Cihaz kimliği hesaplanıyor…</div></div>':''}
+  <div id="a-err" class="text-sm text-oc-accent mb-2 hidden"></div>
+  <button id="a-go" class="btn btn-accent w-full justify-center" ${reg?'disabled':''} onclick="submitAuth('${mode}')">${reg?'Kayıt ol':'Giriş yap'}</button>
+  <p class="text-sm text-slate-400 mt-4 text-center">${reg?'Zaten hesabın var mı?':'Hesabın yok mu?'} <a href="#" class="text-oc-blue" onclick="openAuth('${reg?'login':'register'}');return false">${reg?'Giriş yap':'Kayıt ol'}</a></p>`);
+  if(reg)pechtpInit();
+  setTimeout(()=>$(reg?'#a-u':'#a-e')?.focus(),50);
+}
+async function submitAuth(mode){
+  const err=m=>{const e=$('#a-err');e.textContent=m;e.classList.remove('hidden')};
+  const email=$('#a-e').value.trim().toLowerCase(),pw=$('#a-p').value,un=$('#a-u')?.value.trim();
+  if(!email||!pw)return err('E-posta ve şifre gerekli.');
+  if(pw.length<6)return err('Şifre en az 6 karakter olmalı.');
+  if(mode==='register'){if(!un||un.length<3)return err('Kullanıcı adı en az 3 karakter olmalı.');if(!PE.ok)return err('Önce PECHTP insan doğrulamasını tamamla.')}
+  const btn=$('#a-go');btn.disabled=true;
+  try{
+    const h=await sha(pw,email);
+    if(mode==='register'){
+      const {error}=await supabaseClient.from('app_users').insert([{email,username:un,password_hash:h,device_id:PE.device,pechtp_token:PE.token}]);
+      if(error){btn.disabled=false;return err(error.code==='23505'?'Bu e-posta veya kullanıcı adı zaten kayıtlı.':error.message)}
+      user={email,username:un,h};
+    }else{
+      const {data,error}=await supabaseClient.rpc('app_login',{p_email:email,p_hash:h});
+      if(error){btn.disabled=false;return err(error.message)}
+      if(!data||!data.length){btn.disabled=false;return err('E-posta veya şifre hatalı.')}
+      user={email:data[0].email,username:data[0].username,h};
+    }
+    localStorage.setItem('wen_user',JSON.stringify(user));
+    closeModal();header();toast('Hoş geldin, '+user.username,'ok');route();
+  }catch(e){btn.disabled=false;err('Hata: '+e.message)}
+}
+
+/* ---------- Repolar ---------- */
+async function createRepo(){
+  if(!user||!user.h)return openAuth('login');
+  const n=prompt('Repo adı:','benim-repom');if(!n)return;
+  const slug=slugify(n)+'-'+rand();
+  const {error}=await supabaseClient.from('repos').insert([{repo_slug:slug,owner_email:user.email,title:n,items:[]}]);
+  if(error)return toast(error.message,'err');
+  location.hash='#/repo/'+slug;
+}
+async function renderRepos(){
+  if(!need())return;
+  const {data,error}=await supabaseClient.from('repos').select('repo_slug,title,items,updated_at').eq('owner_email',user.email).order('updated_at',{ascending:false});
+  if(error)return nf(error.message);
+  $('#app').innerHTML=`<div class="flex-1 overflow-auto"><div class="max-w-4xl mx-auto p-6"><div class="flex items-center justify-between mb-6"><h1 class="text-2xl font-bold">Repolarım</h1><button class="btn btn-accent" onclick="createRepo()">Yeni repo</button></div>
+  ${data.length?data.map(r=>`<a href="#/repo/${esc(r.repo_slug)}" class="block bg-oc-panel border border-oc-border rounded-xl p-4 mb-3 hover:bg-[#273449]"><div class="font-semibold">${esc(r.title)}</div><div class="text-xs text-slate-400 mt-1">${r.items.length} sınıf · ${new Date(r.updated_at).toLocaleString('tr-TR')}</div></a>`).join(''):'<div class="text-slate-400">Henüz repo yok. "Yeni repo" ile başla.</div>'}</div></div>`;
+}
+async function renderRepo(slug){
+  if(!need())return;
+  const {data,error}=await supabaseClient.from('repos').select('*').eq('repo_slug',slug).maybeSingle();
+  if(error||!data)return nf('Repo bulunamadı.');
+  if(data.owner_email!==user.email)return nf('Bu repo sana ait değil.');
+  R=data;drawRepo();
+}
+function drawRepo(){
+  const link=i=>i.type==='site'?'#/newsite/'+i.ref:i.type==='test'?`#/test/${R.repo_slug}/${i.id}`:sqlPath(i.ref);
+  const lab={site:'HTML / Site · Deploy',test:'Test · JavaScript',sql:'SQL · PostgreSQL 5 MB'};
+  $('#app').innerHTML=`<div class="flex-1 overflow-auto"><div class="max-w-4xl mx-auto p-6">
+   <div class="flex flex-wrap items-center justify-between gap-3 mb-6"><div><h1 class="text-2xl font-bold">${esc(R.title)}</h1><div class="mono text-xs text-oc-blue">${esc(R.repo_slug)}</div></div><button class="btn btn-accent" onclick="openNewClass()">Yeni sınıf</button></div>
+   ${R.items.length?R.items.map(i=>`<div class="flex items-center justify-between gap-3 bg-oc-panel border border-oc-border rounded-xl p-4 mb-3"><div class="min-w-0"><div class="font-semibold truncate">${esc(i.name)}</div><div class="text-xs text-slate-400">${lab[i.type]}</div></div><div class="flex gap-2"><a class="btn" href="${esc(link(i))}">Aç</a><button class="btn" onclick="rmItem('${esc(i.id)}')">Kaldır</button></div></div>`).join(''):'<div class="text-slate-400">Bu repo boş. "Yeni sınıf" ile başla.</div>'}</div></div>`;
+}
+function openNewClass(){
+  modal(`<h2 class="text-xl font-bold mb-4">Yeni sınıf</h2>
+  <button class="btn w-full mb-2 justify-start" onclick="addClass('site')">🌐 HTML / Site / Deploy</button>
+  <button class="btn w-full mb-2 justify-start" onclick="addClass('test')">🧪 Tests · programlama (JavaScript çalıştırma)</button>
+  <button class="btn w-full mb-4 justify-start" onclick="addClass('sql')">🐘 SQL · 5 MB ücretsiz PostgreSQL</button>
+  <button class="btn" onclick="closeModal()">Vazgeç</button>`);
+}
+async function saveItems(){const {error}=await supabaseClient.from('repos').update({items:R.items,updated_at:new Date().toISOString()}).eq('repo_slug',R.repo_slug);if(error)throw error}
+async function addClass(type){
+  closeModal();
+  const name=prompt('Sınıf adı:',{site:'sitem',test:'deneme',sql:'veritabanim'}[type]);if(!name)return;
+  const it={id:rand(),type,name};
+  try{
+    if(type==='site')it.ref=slugify(name)+'-'+rand();
+    if(type==='test')it.code='console.log("Merhaba Wenitor");\nconsole.log([1,2,3].map(x=>x*2));';
+    if(type==='sql'){const {data,error}=await supabaseClient.rpc('sqlproj_create',{p_email:user.email,p_hash:user.h,p_title:name,p_repo:R.repo_slug});if(error)throw error;it.ref=data.project_id}
+    R.items.push(it);await saveItems();
+    location.hash=type==='site'?'#/newsite/'+it.ref:type==='test'?`#/test/${R.repo_slug}/${it.id}`:sqlPath(it.ref);
+  }catch(e){toast(e.message||String(e),'err')}
+}
+async function rmItem(id){
+  const it=R.items.find(i=>i.id===id);if(!it||!confirm(`"${it.name}" kaldırılsın mı?`))return;
+  try{
+    if(it.type==='sql'){const {error}=await supabaseClient.rpc('sqlproj_delete',{p_project:it.ref,p_email:user.email,p_hash:user.h});if(error)throw error}
+    if(it.type==='site')await supabaseClient.from('deployed_sites').delete().eq('project_slug',it.ref).eq('user_email',user.email);
+    R.items=R.items.filter(i=>i.id!==id);await saveItems();drawRepo();
+  }catch(e){toast(e.message||String(e),'err')}
+}
+
+/* ---------- SQL editörü: /#/postrage/.../blob/s<16 rakam> ---------- */
+function qUsage(n){$('#qbar').style.width=Math.min(100,n/52428.8)+'%';$('#qbar').style.background=n>4718592?'#e11d48':'#38bdf8';$('#qinfo').textContent=(n/1048576).toFixed(2)+' MB / 5 MB kullanıldı'+(Q.owner?'':' · salt okunur (genel anahtar)')}
+async function openSql(id){
+  if(!/^s\d{16}$/.test(id||''))return nf('Geçersiz SQL proje ID.');
+  const {data,error}=await supabaseClient.rpc('sqlproj_get',{p_project:id,p_email:user?user.email:'',p_hash:user?user.h||'':''});
+  if(error||!data)return nf(error?error.message:'SQL projesi bulunamadı.');
+  Q=data;const own=!!Q.owner;
+  $('#app').innerHTML=`<div class="flex flex-wrap items-center justify-between gap-2 px-3 py-2 bg-oc-panel border-b border-oc-border text-sm flex-none">
+    <div class="min-w-0"><span class="font-semibold">${esc(Q.title)}</span> <span class="mono text-xs text-oc-blue break-all">${esc(id)}</span></div>
+    <div class="flex flex-wrap gap-2"><button class="btn !py-1" onclick="cpApi()">API kopyala</button><button class="btn !py-1" onclick="cp(location.href,'Bağlantı')">Bağlantı kopyala</button><button class="btn !py-1" onclick="cp(SUPABASE_URL+'/rest/v1/rpc/sqlproj_run','URL')">URL kopyala</button><button class="btn !py-1" onclick="cp(Q.public_key,'Genel anahtar')">Genel anahtar</button>${own?'<button class="btn !py-1" onclick="cp(Q.secret_key,\'Gizli ana anahtar\')">Gizli anahtar</button><button class="btn !py-1" onclick="saveSql()">Kaydet</button>':''}<button class="btn btn-accent !py-1" onclick="runSql()">Çalıştır</button></div></div>
+   <div class="h-1.5 bg-oc-bg flex-none"><div id="qbar" class="h-full" style="width:0"></div></div><div id="qinfo" class="text-xs text-slate-400 px-3 py-1 flex-none"></div>
+   <div class="flex-1 min-h-0 flex flex-col md:flex-row">
+    <textarea id="qsql" spellcheck="false" ${own?'':'readonly'} class="flex-1 min-h-0 bg-oc-bg p-3 mono text-[13px] leading-5 outline-none resize-none">${esc(Q.script)}</textarea>
+    <div id="qout" class="flex-1 min-h-0 overflow-auto border-t md:border-t-0 md:border-l border-oc-border p-3 text-sm bg-[#0b1222]"><span class="text-slate-500">Sonuçlar burada görünür. Ctrl+Enter ile çalıştır. Her ifade ";" ve satır sonu ile bitmeli.</span></div></div>`;
+  qUsage(Q.size_bytes||0);
+  $('#qsql').addEventListener('keydown',e=>{
+    if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();runSql()}
+    if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'){e.preventDefault();if(Q.owner)saveSql()}
+    if(e.key==='Tab'&&!e.target.readOnly){e.preventDefault();e.target.setRangeText('  ',e.target.selectionStart,e.target.selectionEnd,'end')}
+  });
+}
+function cpApi(){cp(`curl -X POST '${SUPABASE_URL}/rest/v1/rpc/sqlproj_run' -H 'apikey: ${SUPABASE_ANON_KEY}' -H 'Content-Type: application/json' -d '{"p_project":"${Q.project_id}","p_key":"${Q.public_key}","p_sql":"select 1 as ok"}'`,'API (curl)')}
+async function saveSql(){
+  const {error}=await supabaseClient.rpc('sqlproj_save',{p_project:Q.project_id,p_email:user.email,p_hash:user.h,p_script:$('#qsql').value});
+  error?toast(error.message,'err'):toast('SQL kaydedildi.','ok');
+}
+async function runSql(){
+  const ta=$('#qsql'),sql=(ta.value.substring(ta.selectionStart,ta.selectionEnd)||ta.value).trim(),o=$('#qout');
+  if(!sql)return;o.innerHTML='<span class="text-slate-400">Çalışıyor…</span>';
+  const {data,error}=await supabaseClient.rpc('sqlproj_run',{p_project:Q.project_id,p_key:Q.secret_key||Q.public_key,p_sql:sql});
+  if(error){o.innerHTML='<pre class="text-oc-accent whitespace-pre-wrap">'+esc(error.message)+'</pre>';return}
+  qUsage(data.size_bytes);
+  const cell=v=>esc(v!==null&&typeof v==='object'?JSON.stringify(v):v);
+  o.innerHTML=data.results.map(r=>{
+    if(!r.rows)return `<div class="mb-4"><div class="mono text-xs text-slate-500">${esc(r.sql)}</div><span class="text-green-400">${r.rowcount} satır etkilendi</span></div>`;
+    const c=r.rows[0]?Object.keys(r.rows[0]):[];
+    return `<div class="mb-4"><div class="mono text-xs text-slate-500 mb-1">${esc(r.sql)}</div>${r.rows.length?`<div class="overflow-auto"><table class="w-full text-left mono text-xs"><thead><tr>${c.map(k=>`<th class="p-1.5 border-b border-oc-border text-oc-blue">${esc(k)}</th>`).join('')}</tr></thead><tbody>${r.rows.map(x=>`<tr>${c.map(k=>`<td class="p-1.5 border-b border-oc-border/40">${cell(x[k])}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`:'<span class="text-slate-500">0 satır</span>'}</div>`;
+  }).join('');
+}
+
+/* ---------- Test sınıfı: JavaScript çalıştırıcı ---------- */
+async function openTest(rs,iid){
+  if(!need())return;
+  const {data}=await supabaseClient.from('repos').select('*').eq('repo_slug',rs).maybeSingle();
+  const it=data&&data.items.find(i=>i.id===iid);
+  if(!it||data.owner_email!==user.email)return nf('Test sınıfı bulunamadı.');
+  T={row:data,it};
+  $('#app').innerHTML=`<div class="flex items-center justify-between px-3 py-2 bg-oc-panel border-b border-oc-border text-sm flex-none"><div><span class="font-semibold">${esc(it.name)}</span> <span class="text-slate-400">JavaScript</span></div><div class="flex gap-2"><a class="btn !py-1" href="#/repo/${esc(rs)}">Repo</a><button class="btn !py-1" onclick="saveTest()">Kaydet</button><button class="btn btn-accent !py-1" onclick="runTest()">Çalıştır</button></div></div>
+  <div class="flex-1 min-h-0 flex flex-col md:flex-row"><textarea id="tcode" spellcheck="false" class="flex-1 min-h-0 bg-oc-bg p-3 mono text-[13px] leading-5 outline-none resize-none">${esc(it.code||'')}</textarea>
+  <pre id="tout" class="flex-1 min-h-0 overflow-auto border-t md:border-t-0 md:border-l border-oc-border p-3 text-sm mono bg-[#0b1222] whitespace-pre-wrap"></pre></div>
+  <iframe id="tframe" class="hidden" sandbox="allow-scripts"></iframe>`;
+  $('#tcode').addEventListener('keydown',e=>{
+    if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();runTest()}
+    if(e.key==='Tab'){e.preventDefault();e.target.setRangeText('  ',e.target.selectionStart,e.target.selectionEnd,'end')}
+  });
+}
+window.addEventListener('message',e=>{
+  const d=e.data,o=$('#tout');if(!d||!d.wen||!o)return;
+  const s=document.createElement('div');s.textContent=d.m;if(d.t==='err')s.style.color='#fb7185';o.appendChild(s);
+});
+function runTest(){
+  $('#tout').textContent='';
+  const code=JSON.stringify($('#tcode').value).replace(/</g,'\\u003c');
+  $('#tframe').srcdoc=`<script>const _p=(t,a)=>parent.postMessage({wen:1,t,m:a.map(x=>{try{return typeof x==='object'?JSON.stringify(x):String(x)}catch{return String(x)}}).join(' ')},'*');console.log=(...a)=>_p('log',a);console.error=(...a)=>_p('err',a);addEventListener('error',e=>_p('err',[e.message]));addEventListener('unhandledrejection',e=>_p('err',[e.reason]));try{(0,eval)(${code})}catch(e){_p('err',[e.message])}<\/script>`;
+}
+async function saveTest(){
+  T.it.code=$('#tcode').value;
+  const {error}=await supabaseClient.from('repos').update({items:T.row.items,updated_at:new Date().toISOString()}).eq('repo_slug',T.row.repo_slug);
+  error?toast(error.message,'err'):toast('Kaydedildi.','ok');
 }
 </script>
 </body>
