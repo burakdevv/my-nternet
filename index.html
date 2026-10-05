@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="tr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My-Internet | Web IDE, SPA Router & Deployer</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        gh: {
+                            bg: '#0d1117',
+                            header: '#161b22',
+                            card: '#161b22',
+                            border: '#30363d',
+                            btn: '#21262d',
+                            btnHover: '#30363d',
+                            green: '#238636',
+                            greenHover: '#2ea043',
+                            blue: '#58a6ff',
+                            text: '#c9d1d9',
+                            muted: '#8b949e'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+                        mono: ['ui-monospace', 'SFMono-Regular', 'SF Mono', 'Menlo', 'Consolas', 'Liberation Mono', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Supabase JS Client v2 CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        body {
+            background-color: #0d1117;
+            color: #c9d1d9;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        
+        /* Custom Scrollbars in GitHub Dark Style */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #0d1117; }
+        ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #8b949e; }
+        
+        /* Line Numbers Alignment */
+        .line-numbers {
+            width: 48px;
+            padding: 1rem 0;
+            text-align: right;
+            padding-right: 12px;
+            color: #8b949e;
+            background-color: #0d1117;
+            border-right: 1px solid #30363d;
+            user-select: none;
+            font-size: 13px;
+            line-height: 1.5rem;
+        }
+        
+        #code-editor {
+            flex: 1;
+            background: #0d1117;
+            color: #c9d1d9;
+            padding: 1rem;
+            resize: none;
+            outline: none;
+            border: none;
+            font-size: 13px;
+            line-height: 1.5rem;
+            white-space: pre;
+            overflow-x: auto;
+            tab-size: 2;
+        }
+        
+        .file-item-active {
+            background-color: #21262d !important;
+            color: #58a6ff !important;
+            border-left: 2px solid #58a6ff;
+        }
+        
+        /* GitHub style badge pulse */
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.85); }
+        }
+        .pulse-live {
+            animation: pulse-dot 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen overflow-hidden select-none bg-gh-bg text-gh-text flex flex-col">
+
+    <div id="app-wrapper" class="w-full h-full flex flex-col relative overflow-hidden">
+
+        <!-- GLOBAL GITHUB STYLE NAVBAR -->
+        <header id="global-header" class="h-14 bg-gh-header border-b border-gh-border flex items-center justify-between px-4 z-40">
+            <div class="flex items-center gap-3">
+                <!-- SVG Brand Logo -->
+                <button onclick="window.navigateTo('/')" class="flex items-center gap-2 text-white font-bold hover:opacity-90 transition cursor-pointer">
+                    <svg id="logo-svg" class="w-7 h-7 text-white fill-current" viewBox="0 0 16 16" version="1.1" aria-hidden="true">
+                        <path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8z"></path>
+                    </svg>
+                    <span class="text-sm tracking-wide font-semibold">My-Internet</span>
+                    <span class="text-[11px] bg-gh-btn border border-gh-border text-gh-muted px-2 py-0.5 rounded-full font-mono">v3.1</span>
+                </button>
+
+                <!-- Navigation Links -->
+                <nav class="hidden md:flex items-center gap-1 text-xs ml-4">
+                    <button onclick="window.navigateTo('/')" class="px-3 py-1.5 rounded-md hover:bg-gh-btn text-gh-text hover:text-white transition flex items-center gap-1.5">
+                        🏠 Karşılama
+                    </button>
+                    <button onclick="window.navigateTo('/sites')" class="px-3 py-1.5 rounded-md hover:bg-gh-btn text-gh-text hover:text-white transition flex items-center gap-1.5">
+                        🌐 Yayınlanan Siteler
+                    </button>
+                    <button onclick="window.navigateTo('/help')" class="px-3 py-1.5 rounded-md hover:bg-gh-btn text-gh-text hover:text-white transition flex items-center gap-1.5">
+                        📖 Kılavuz
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Header Action Controls -->
+            <div class="flex items-center gap-2">
+                <button id="nav-btn-account" onclick="window.openMyProjectsModal()" class="bg-gh-btn hover:bg-gh-btnHover border border-gh-border text-gh-text px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition cursor-pointer">
+                    👤 Projelerim
+                </button>
+                <button onclick="window.createNewSiteAndOpenEditor()" class="bg-gh-green hover:bg-gh-greenHover text-white px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-sm">
+                    ➕ Yeni Site
+                </button>
+            </div>
+        </header>
+
+        <!-- 1. KARSILAMA (WELCOME) VIEW -->
+        <div id="welcome-view" class="flex-1 bg-gh-bg overflow-y-auto p-6 md:p-12 flex flex-col items-center justify-center">
+            <div class="max-w-4xl w-full flex flex-col items-center text-center space-y-8">
+                
+                <!-- 3D HTML Icon & Hero Badge -->
+                <div class="relative group">
+                    <img src="https://img.magnific.com/free-psd/3d-rendered-html-file-icon_84443-57041.jpg?semt=ais_hybrid&w=740&q=80" 
+                         alt="HTML Logo" 
+                         onerror="this.onerror=null; this.src='https://placehold.co/120x120/161b22/58a6ff?text=HTML5';"
+                         class="w-28 h-28 md:w-36 md:h-36 object-contain rounded-2xl shadow-2xl border border-gh-border bg-gh-card p-2 transition duration-300 transform group-hover:scale-105">
+                </div>
+
+                <div class="space-y-3 max-w-2xl">
+                    <h1 class="text-3xl md:text-5xl font-extrabold text-white tracking-tight">
+                        Tarayıcı Tabanlı Bulut IDE & Realtime Deploy
+                    </h1>
+                    <p class="text-sm md:text-base text-gh-muted leading-relaxed">
+                        Kodlarınızı anında yazın, sanal dosya sisteminde organize edin ve Supabase Realtime altyapısı ile anında yayına alın.
+                    </p>
+                </div>
+
+                <!-- Main Action Buttons -->
+                <div class="flex flex-wrap items-center justify-center gap-4 w-full max-w-md">
+                    <button onclick="window.createNewSiteAndOpenEditor()" class="flex-1 bg-gh-green hover:bg-gh-greenHover text-white font-bold py-3 px-6 rounded-lg text-sm shadow-lg transition transform hover:-translate-y-0.5 flex items-center justify-center gap-2">
+                        🚀 Yeni Proje Başlat
+                    </button>
+                    <button onclick="window.openMyProjectsModal()" class="flex-1 bg-gh-btn hover:bg-gh-btnHover border border-gh-border text-white font-semibold py-3 px-6 rounded-lg text-sm transition flex items-center justify-center gap-2">
+                        📂 Projelerimi Aç
+                    </button>
+                </div>
+
+                <!-- Quick Feature Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 w-full pt-6 text-left">
+                    <div class="bg-gh-card border border-gh-border rounded-xl p-5 hover:border-gh-muted transition">
+                        <div class="text-2xl mb-2">⚡</div>
+                        <h3 class="text-sm font-bold text-white mb-1">Anında Canlı Önizleme</h3>
+                        <p class="text-xs text-gh-muted">Kod yazarken script ve CSS dosyaları anında iframe içinde harmanlanır.</p>
+                    </div>
+
+                    <div class="bg-gh-card border border-gh-border rounded-xl p-5 hover:border-gh-muted transition">
+                        <div class="text-2xl mb-2">🌐</div>
+                        <h3 class="text-sm font-bold text-white mb-1">Açık Kaynak & Private</h3>
+                        <p class="text-xs text-gh-muted">Projelerinizi OpenSource lisansıyla paylaşabilir veya kodları gizleyebilirsiniz.</p>
+                    </div>
+
+                    <div class="bg-gh-card border border-gh-border rounded-xl p-5 hover:border-gh-muted transition">
+                        <div class="text-2xl mb-2">📡</div>
+                        <h3 class="text-sm font-bold text-white mb-1">Supabase Realtime Sync</h3>
+                        <p class="text-xs text-gh-muted">Deploy edilen siteler WebSockets sinyali ile sekme yenilenmeden güncellenir.</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- 2. IDE EDITOR VIEW -->
+        <div id="ide-view" class="flex-1 flex overflow-hidden w-full h-full hidden">
+            
+            <!-- LEFT PANEL: Virtual File Explorer -->
+            <aside class="w-64 bg-gh-card border-r border-gh-border flex flex-col justify-between select-none">
+                <div class="flex flex-col h-full">
+                    <!-- Title Bar -->
+                    <div class="p-3 border-b border-gh-border flex justify-between items-center bg-gh-header">
+                        <span class="text-xs uppercase tracking-wider font-bold text-gh-muted">SANAL DOSYA SİSTEMİ</span>
+                        <div class="flex items-center gap-1">
+                            <button onclick="window.openCreateModal('file')" class="p-1 hover:bg-gh-btn rounded text-gh-muted hover:text-white transition" title="Yeni Dosya">📄+</button>
+                            <button onclick="window.openCreateModal('folder')" class="p-1 hover:bg-gh-btn rounded text-gh-muted hover:text-white transition" title="Yeni Klasör">📁+</button>
+                        </div>
+                    </div>
+
+                    <!-- File List Tree -->
+                    <div id="file-tree" class="flex-1 overflow-y-auto py-2 px-1 text-xs font-mono">
+                        <!-- Dynamic file items injected here -->
+                    </div>
+                </div>
+
+                <!-- Footer Project Info -->
+                <div class="p-2.5 border-t border-gh-border bg-gh-bg text-[11px] text-gh-muted flex justify-between items-center">
+                    <span id="editor-slug-display" class="truncate font-mono text-gh-blue">editor/...</span>
+                    <span class="text-emerald-400 font-mono">● Active</span>
+                </div>
+            </aside>
+
+            <!-- CENTER PANEL: Code Editor Textarea -->
+            <main class="flex-1 flex flex-col bg-gh-bg border-r border-gh-border overflow-hidden">
+                <!-- Tab Header Bar -->
+                <div class="h-9 bg-gh-header flex items-center border-b border-gh-border px-2 overflow-x-auto justify-between">
+                    <div class="flex items-center gap-2">
+                        <div id="active-tab-title" class="px-3 py-1.5 bg-gh-bg text-xs font-mono text-gh-blue border-t-2 border-gh-blue flex items-center gap-2 rounded-t">
+                            <span>📄</span>
+                            <span id="current-file-name">index.html</span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2 pr-2">
+                        <button onclick="window.runCode()" class="bg-gh-btn hover:bg-gh-btnHover border border-gh-border text-white px-2.5 py-1 rounded text-xs font-medium flex items-center gap-1 transition">
+                            ▶️️ Kodu Çalıştır
+                        </button>
+                        <button onclick="window.openDeployModal()" class="bg-gh-green hover:bg-gh-greenHover text-white px-3 py-1 rounded text-xs font-bold flex items-center gap-1 transition">
+                            🚀 Deploy Et
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Code Editor Textarea Container -->
+                <div class="flex-1 flex font-mono">
+                    <div id="line-numbers" class="line-numbers">1</div>
+                    <textarea id="code-editor" spellcheck="false" placeholder="Kodlarınızı yazmaya başlayın..."></textarea>
+                </div>
+            </main>
+
+            <!-- RIGHT PANEL: Local Preview Frame -->
+            <section class="w-5/12 bg-white flex flex-col overflow-hidden">
+                <div class="h-9 bg-gh-header border-b border-gh-border flex items-center justify-between px-3">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span class="text-xs text-gh-muted font-semibold">Canlı Yerel Önizleme</span>
+                    </div>
+                    <button onclick="window.runCode()" class="text-xs text-gh-muted hover:text-white px-2 py-0.5 rounded bg-gh-btn hover:bg-gh-btnHover transition">
+                        🔄 Yenile
+                    </button>
+                </div>
+                <iframe id="local-preview-iframe" class="flex-1 w-full h-full bg-white border-none" sandbox="allow-scripts allow-modals allow-forms allow-same-origin"></iframe>
+            </section>
+        </div>
+
+        <!-- 3. PUBLISHED SITES DIRECTORY VIEW (/sites) -->
+        <div id="sites-view" class="flex-1 bg-gh-bg overflow-y-auto p-6 md:p-10 hidden">
+            <div class="max-w-6xl mx-auto space-y-6">
+                
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-gh-border">
+                    <div>
+                        <h1 class="text-2xl font-bold text-white flex items-center gap-2">
+                            <span>🌐</span> Yayınlanan Siteler Galeri Dizini
+                        </h1>
+                        <p class="text-xs text-gh-muted">Topluluk tarafından Supabase Realtime altyapısıyla deploy edilmiş canlı web projeleri.</p>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button onclick="window.loadPublishedSites('all')" class="px-3 py-1.5 bg-gh-btn hover:bg-gh-btnHover border border-gh-border rounded text-xs font-semibold text-white">Tümü</button>
+                        <button onclick="window.loadPublishedSites('opensource')" class="px-3 py-1.5 bg-gh-btn hover:bg-gh-btnHover border border-gh-border rounded text-xs font-semibold text-emerald-400">OpenSource</button>
+                        <button onclick="window.loadPublishedSites('private')" class="px-3 py-1.5 bg-gh-btn hover:bg-gh-btnHover border border-gh-border rounded text-xs font-semibold text-amber-400">Gizli (Private)</button>
+                    </div>
+                </div>
+
+                <!-- Sites Grid -->
+                <div id="sites-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Injected dynamically -->
+                </div>
+
+            </div>
+        </div>
+
+        <!-- 4. LIVE DEPLOYED SITE FULLSCREEN VIEW (/sites/slug) -->
+        <div id="live-site-view" class="fixed inset-0 bg-white z-50 flex flex-col hidden">
+            <!-- Floating Header Banner -->
+            <div class="absolute top-3 left-3 z-50 flex items-center gap-3">
+                <button onclick="window.navigateTo('/sites')" class="bg-gh-header/90 hover:bg-black text-white px-3.5 py-1.5 rounded-lg shadow-xl text-xs font-semibold backdrop-blur border border-gh-border flex items-center gap-2 transition cursor-pointer">
+                    ⬅ Sitelere Dön
+                </button>
+                <div id="live-status-badge" class="bg-emerald-600/90 text-white px-3 py-1.5 rounded-lg shadow-xl text-xs font-bold flex items-center gap-2 backdrop-blur border border-emerald-500">
+                    <span class="w-2 h-2 rounded-full bg-white pulse-live"></span>
+                    <span id="status-text">🟢 Supabase Realtime Canlı Broadcast</span>
+                </div>
+            </div>
+            <!-- Fullscreen Live Render Frame -->
+            <iframe id="live-site-iframe" class="w-full h-full border-none" sandbox="allow-scripts allow-modals allow-forms allow-same-origin"></iframe>
+        </div>
+
+        <!-- 5. HELP & MANUAL VIEW (/help) -->
+        <div id="help-view" class="flex-1 bg-gh-bg overflow-y-auto p-6 md:p-12 hidden">
+            <div class="max-w-4xl mx-auto bg-gh-card border border-gh-border rounded-xl p-6 md:p-8 space-y-6">
+                <div class="flex items-center gap-3 pb-4 border-b border-gh-border">
+                    <span class="text-3xl">📖</span>
+                    <div>
+                        <h1 class="text-xl font-bold text-white">Platform ve Yönlendirme Kılavuzu</h1>
+                        <p class="text-xs text-gh-muted">My-Internet Web IDE & Supabase Realtime Mimarisi</p>
+                    </div>
+                </div>
+
+                <div class="space-y-4 text-xs md:text-sm text-gh-text leading-relaxed">
+                    <section class="p-4 bg-gh-bg rounded-lg border border-gh-border space-y-2">
+                        <h3 class="font-bold text-gh-blue">1. Dinamik Editör Yolları (/editor/uielements...)</h3>
+                        <p class="text-gh-muted">
+                            Adres çubuğundaki <code class="bg-gh-btn px-1.5 py-0.5 rounded text-gh-text font-mono">/editor/uielements[ID]?/htmlstrp/[RANDOM_ID]</code> deseni ile her proje benzersiz bir editör kopyasına sahip olur.
+                        </p>
+                    </section>
+
+                    <section class="p-4 bg-gh-bg rounded-lg border border-gh-border space-y-2">
+                        <h3 class="font-bold text-emerald-400">2. Açık Kaynak vs Private Lisanslama</h3>
+                        <p class="text-gh-muted">
+                            Deploy ederken projenizi <strong>OpenSource</strong> seçerseniz diğer kullanıcılar kodlarınızı inceleyebilir ve kendi editörlerine klonlayabilir. <strong>Private</strong> modunda ise kodlar gizlenir ve sadece canlı önizleme sunulur.
+                        </p>
+                    </section>
+
+                    <section class="p-4 bg-gh-bg rounded-lg border border-gh-border space-y-2">
+                        <h3 class="font-bold text-purple-400">3. Supabase Realtime Soket Senkronizasyonu</h3>
+                        <p class="text-gh-muted">
+                            Yayınlanan bir sitede değişiklik yaptığınız an Supabase WebSockets kanalı ile yayındaki tüm tarayıcılara sinyal gönderilir ve web sitesi sayfayı yenilemeden güncellenir.
+                        </p>
+                    </section>
+                </div>
+
+                <div class="flex justify-end pt-4 border-t border-gh-border">
+                    <button onclick="window.navigateTo('/')" class="bg-gh-btn hover:bg-gh-btnHover border border-gh-border text-white px-4 py-2 rounded text-xs font-semibold">
+                        Karşılama Ekranına Dön
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- MODAL 1: CREATE FILE/FOLDER -->
+    <div id="create-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-gh-card border border-gh-border rounded-xl p-6 w-96 shadow-2xl space-y-4">
+            <h3 id="modal-title" class="text-sm font-bold text-white">Yeni Öğe Oluştur</h3>
+            <input type="text" id="modal-input" placeholder="Dosya adı (örn: style.css, script.js, data.json)" class="w-full bg-gh-bg border border-gh-border rounded p-2.5 text-xs text-white outline-none focus:border-gh-blue font-mono">
+            <div class="flex justify-end gap-2">
+                <button onclick="window.closeModal('create-modal')" class="px-4 py-2 bg-gh-btn hover:bg-gh-btnHover text-white text-xs rounded">İptal</button>
+                <button id="modal-confirm-btn" class="px-4 py-2 bg-gh-green hover:bg-gh-greenHover text-white text-xs rounded font-semibold">Oluştur</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: DEPLOY PROJECT -->
+    <div id="deploy-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-gh-card border border-gh-border rounded-xl p-6 w-[480px] shadow-2xl space-y-4">
+            <div class="flex items-center gap-2">
+                <span class="text-2xl">🚀</span>
+                <h3 class="text-base font-bold text-white">Projenizi Buluta Deploy Edin</h3>
+            </div>
+            
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-semibold text-gh-muted mb-1">Proje Başlığı</label>
+                    <input type="text" id="deploy-title-input" placeholder="Harika Web Uygulamam" class="w-full bg-gh-bg border border-gh-border rounded p-2 text-white outline-none focus:border-gh-blue">
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-gh-muted mb-1">Project Slug (URL Adresi)</label>
+                    <input type="text" id="deploy-slug-input" placeholder="my-awesome-app" class="w-full bg-gh-bg border border-gh-border rounded p-2 text-emerald-400 outline-none focus:border-gh-blue font-mono">
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block font-semibold text-gh-muted mb-1">E-Posta (Yönetim İçin)</label>
+                        <input type="email" id="deploy-email-input" placeholder="developer@mail.com" class="w-full bg-gh-bg border border-gh-border rounded p-2 text-white outline-none focus:border-gh-blue">
+                    </div>
+
+                    <div>
+                        <label class="block font-semibold text-gh-muted mb-1">Lisans Türü</label>
+                        <select id="deploy-license-select" class="w-full bg-gh-bg border border-gh-border rounded p-2 text-white outline-none">
+                            <option value="MIT">MIT License</option>
+                            <option value="Apache-2.0">Apache 2.0</option>
+                            <option value="GPL-3.0">GPL v3</option>
+                            <option value="BSD-3-Clause">BSD 3-Clause</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 pt-1">
+                    <input type="checkbox" id="deploy-private-check" class="rounded bg-gh-bg border-gh-border text-gh-blue">
+                    <label for="deploy-private-check" class="text-xs text-gh-text cursor-pointer">
+                        🔒 Kodları Gizle (Private Project - Sadece Canlı Önizleme Sunulur)
+                    </label>
+                </div>
+            </div>
+
+            <div id="deploy-status-box" class="p-3 bg-gh-bg border border-gh-border rounded text-xs font-mono text-gh-muted hidden break-all"></div>
+
+            <div class="flex justify-end gap-2 pt-2 border-t border-gh-border">
+                <button onclick="window.closeModal('deploy-modal')" class="px-4 py-2 bg-gh-btn hover:bg-gh-btnHover text-white text-xs rounded">İptal</button>
+                <button onclick="window.executeDeploy()" class="px-5 py-2 bg-gh-green hover:bg-gh-greenHover text-white text-xs rounded font-bold">Yayına Al</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 3: MY PROJECTS EMAIL MODAL -->
+    <div id="my-projects-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-gh-card border border-gh-border rounded-xl p-6 w-[500px] shadow-2xl space-y-4">
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                <span>👤</span> E-Posta Hesabınıza Ait Projeler
+            </h3>
+
+            <div class="flex gap-2">
+                <input type="email" id="user-email-search" placeholder="E-posta adresiniz (örn: dev@mail.com)" class="flex-1 bg-gh-bg border border-gh-border rounded p-2 text-xs text-white outline-none focus:border-gh-blue">
+                <button onclick="window.fetchUserProjects()" class="px-4 py-2 bg-gh-blue text-black font-bold rounded text-xs">Getir</button>
+            </div>
+
+            <div id="user-projects-list" class="max-h-60 overflow-y-auto space-y-2 text-xs">
+                <!-- Injected dynamically -->
+            </div>
+
+            <div class="flex justify-end pt-2 border-t border-gh-border">
+                <button onclick="window.closeModal('my-projects-modal')" class="px-4 py-2 bg-gh-btn hover:bg-gh-btnHover text-white text-xs rounded">Kapat</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATIONS -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <script type="module">
+        /* EMBEDDED SUPABASE API CREDENTIALS */
+        const SUPABASE_URL = "https://enyfgaebodgvhfobczfl.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVueWZnYWVib2Rndmhmb2JjemZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEyMTM0NzEsImV4cCI6MjEwNjc4OTQ3MX0.PkYloo0P1OTYsTVzbffoVLx938UtO06An3JTF4L2kfo";
+
+        // Safe Supabase Client Init
+        let supabaseClient = null;
+        try {
+            if (window.supabase) {
+                supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            }
+        } catch (err) {
+            console.warn("Supabase bağlantı Uyarısı:", err);
+        }
+
+        /* VIRTUAL FILE SYSTEM STATE */
+        let fileSystem = [
+            {
+                id: 'f-1',
+                name: 'index.html',
+                type: 'file',
+                content: `<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>Canlı Web Projesi</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="card">
+    <h1>🚀 Supabase Realtime Web App</h1>
+    <p>Bu proje My-Internet IDE sanal dosya sisteminde çalışıyor.</p>
+    <button id="main-btn">Tıkla ve Test Et</button>
+  </div>
+  <script src="script.js"><\/script>
+</body>
+</html>`
+            },
+            {
+                id: 'f-2',
+                name: 'style.css',
+                type: 'file',
+                content: `body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: #0d1117;
+  color: #c9d1d9;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  margin: 0;
+}
+
+.card {
+  background: #161b22;
+  padding: 2.5rem;
+  border-radius: 1rem;
+  border: 1px solid #30363d;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+  text-align: center;
+}
+
+h1 {
+  margin-top: 0;
+  color: #58a6ff;
+}
+
+button {
+  background: #238636;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+button:hover {
+  background: #2ea043;
+  transform: translateY(-2px);
+}`
+            },
+            {
+                id: 'f-3',
+                name: 'script.js',
+                type: 'file',
+                content: `document.getElementById('main-btn').addEventListener('click', () => {
+  const btn = document.getElementById('main-btn');
+  btn.style.backgroundColor = '#38bdf8';
+  btn.style.color = '#000';
+  btn.innerText = '✅ Harika! Kodlar Canlı Çalıştı';
+});`
+            }
+        ];
+
+        let activeFileId = 'f-1';
+        let createType = 'file';
+        let currentRealtimeChannel = null;
+        let currentEditorId = null;
+
+        /* ATTACH ALL FUNCTIONS TO WINDOW TO ELIMINATE REFERENCE ERROR */
+        window.fileSystem = fileSystem;
+
+        // Toast Notification System
+        window.showToast = function(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const bgClass = type === 'success' ? 'bg-emerald-600' : type === 'error' ? 'bg-rose-600' : 'bg-gh-blue text-black';
+            
+            toast.className = `${bgClass} text-white px-4 py-2.5 rounded-lg shadow-2xl text-xs font-semibold flex items-center gap-2 pointer-events-auto transition-all duration-300 transform translate-y-8 opacity-0 border border-white/10`;
+            toast.innerHTML = `<span>${type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'}</span> <span>${message}</span>`;
+            
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.remove('translate-y-8', 'opacity-0'), 10);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-8');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        };
+
+        // File Extension Icons
+        function getFileIcon(filename) {
+            if (filename.endsWith('.html')) return '🌐';
+            if (filename.endsWith('.css')) return '🎨';
+            if (filename.endsWith('.js')) return '📜';
+            if (filename.endsWith('.json')) return '⚙️';
+            return '📄';
+        }
+
+        // Render Tree Items
+        window.renderFileTree = function() {
+            const container = document.getElementById('file-tree');
+            container.innerHTML = '';
+
+            fileSystem.forEach(item => {
+                const div = document.createElement('div');
+                const isActive = item.id === activeFileId;
+                
+                div.className = `flex items-center justify-between px-2 py-1.5 rounded cursor-pointer transition group ${isActive ? 'file-item-active' : 'hover:bg-gh-btn text-gh-text'}`;
+                
+                div.innerHTML = `
+                    <div class="flex items-center gap-2 overflow-hidden truncate flex-1" onclick="window.selectFile('${item.id}')">
+                        <span>${item.type === 'folder' ? '📁' : getFileIcon(item.name)}</span>
+                        <span class="truncate font-mono">${item.name}</span>
+                    </div>
+                    <button onclick="event.stopPropagation(); window.deleteItem('${item.id}')" class="opacity-0 group-hover:opacity-100 p-1 hover:text-rose-400 text-gh-muted transition" title="Sil">
+                        🗑️️
+                    </button>
+                `;
+                container.appendChild(div);
+            });
+        };
+
+        window.selectFile = function(id) {
+            const file = fileSystem.find(f => f.id === id);
+            if (!file) return;
+            
+            activeFileId = id;
+            document.getElementById('current-file-name').innerText = file.name;
+            document.getElementById('code-editor').value = file.content || '';
+            
+            window.updateLineNumbers();
+            window.renderFileTree();
+        };
+
+        window.deleteItem = function(id) {
+            if (fileSystem.length <= 1) {
+                window.showToast("En az bir dosya bulunmalıdır!", "error");
+                return;
+            }
+
+            fileSystem = fileSystem.filter(f => f.id !== id);
+            if (activeFileId === id) {
+                activeFileId = fileSystem[0].id;
+                window.selectFile(activeFileId);
+            } else {
+                window.renderFileTree();
+            }
+            window.showToast("Dosya silindi", "info");
+        };
+
+        window.openCreateModal = function(type) {
+            createType = type;
+            const modal = document.getElementById('create-modal');
+            const input = document.getElementById('modal-input');
+            
+            document.getElementById('modal-title').innerText = type === 'file' ? 'Yeni Dosya Oluştur' : 'Yeni Klasör Oluştur';
+            input.value = '';
+            modal.classList.remove('hidden');
+            input.focus();
+
+            document.getElementById('modal-confirm-btn').onclick = function() {
+                const val = input.value.trim();
+                if (!val) return;
+                
+                const newId = 'f-' + Date.now();
+                fileSystem.push({
+                    id: newId,
+                    name: val,
+                    type: createType,
+                    content: createType === 'file' ? '/* Yeni Dosya */\n' : ''
+                });
+
+                window.closeModal('create-modal');
+                window.selectFile(newId);
+                window.showToast(`${val} oluşturuldu`, "success");
+            };
+        };
+
+        window.closeModal = function(id) {
+            document.getElementById(id).classList.add('hidden');
+        };
+
+        window.updateLineNumbers = function() {
+            const editor = document.getElementById('code-editor');
+            const lineNumbers = document.getElementById('line-numbers');
+            const lines = editor.value.split('\n').length;
+            
+            let nums = '';
+            for (let i = 1; i <= lines; i++) nums += i + '<br>';
+            lineNumbers.innerHTML = nums;
+        };
+
+        // Smart Preview Injection
+        window.runCode = function() {
+            const indexFile = fileSystem.find(f => f.name === 'index.html');
+            if (!indexFile) {
+                window.showToast("index.html bulunamadı!", "error");
+                return;
+            }
+
+            let htmlContent = indexFile.content;
+
+            fileSystem.filter(f => f.name.endsWith('.css')).forEach(cssFile => {
+                const regex = new RegExp(`<link[^>]*href=["']${cssFile.name}["'][^>]*>`, 'gi');
+                htmlContent = htmlContent.replace(regex, `<style>\n${cssFile.content}\n</style>`);
+            });
+
+            fileSystem.filter(f => f.name.endsWith('.js')).forEach(jsFile => {
+                const regex = new RegExp(`<script[^>]*src=["']${jsFile.name}["'][^>]*>\\s*<\\/script>`, 'gi');
+                htmlContent = htmlContent.replace(regex, `<script>\n${jsFile.content}\n<\/script>`);
+            });
+
+            document.getElementById('local-preview-iframe').srcdoc = htmlContent;
+            window.showToast("Yerel önizleme yenilendi", "success");
+        };
+
+        // Open Deploy Modal
+        window.openDeployModal = function() {
+            const modal = document.getElementById('deploy-modal');
+            const slugInput = document.getElementById('deploy-slug-input');
+            const emailInput = document.getElementById('deploy-email-input');
+
+            if (!slugInput.value) {
+                slugInput.value = 'site-' + Math.random().toString(36).substring(2, 8);
+            }
+            
+            emailInput.value = localStorage.getItem('user_email') || '';
+            document.getElementById('deploy-status-box').classList.add('hidden');
+            modal.classList.remove('hidden');
+        };
+
+        // Deploy Execution (Supabase + Offline Fallback)
+        window.executeDeploy = function() {
+            const slug = document.getElementById('deploy-slug-input').value.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
+            const title = document.getElementById('deploy-title-input').value.trim() || 'İsimsiz Proje';
+            const email = document.getElementById('deploy-email-input').value.trim();
+            const license = document.getElementById('deploy-license-select').value;
+            const isPrivate = document.getElementById('deploy-private-check').checked;
+            const statusBox = document.getElementById('deploy-status-box');
+
+            if (!slug) {
+                window.showToast("Geçerli bir slug giriniz!", "error");
+                return;
+            }
+
+            if (email) localStorage.setItem('user_email', email);
+
+            statusBox.classList.remove('hidden');
+            statusBox.innerHTML = '🔄 Supabase veritabanına aktarılıyor...';
+
+            const payload = {
+                project_slug: slug,
+                editor_id: currentEditorId,
+                title: title,
+                user_email: email,
+                license: license,
+                is_private: isPrivate,
+                files: fileSystem,
+                updated_at: new Date().toISOString()
+            };
+
+            // LocalStorage Fallback Backup
+            localStorage.setItem(`deployed_site_${slug}`, JSON.stringify(payload));
+
+            if (supabaseClient) {
+                supabaseClient
+                    .from('deployed_sites')
+                    .upsert(payload, { onConflict: 'project_slug' })
+                    .then(({ error }) => {
+                        if (error) {
+                            console.error("Deploy Hatası:", error);
+                            statusBox.innerHTML = `⚠️ Bulut deploy hatası, yerelde saklandı: <br><span class="text-rose-400">${error.message}</span>`;
+                        } else {
+                            const liveUrl = `${window.location.origin}${window.location.pathname}#/sites/${slug}`;
+                            statusBox.innerHTML = `
+                                ✅ <strong class="text-emerald-400">Bulut Yayını Başarılı!</strong><br>
+                                <a href="${liveUrl}" target="_blank" onclick="window.navigateTo('/sites/${slug}'); window.closeModal('deploy-modal'); return false;" class="text-gh-blue underline font-semibold font-mono">${liveUrl}</a>
+                            `;
+                            window.showToast("Proje başarıyla canlıya alındı!", "success");
+                        }
+                    })
+                    .catch(() => {
+                        statusBox.innerHTML = `⚠️ Çevrimdışı modda yerel hafızaya kaydedildi.`;
+                    });
+            } else {
+                statusBox.innerHTML = `⚠️ Yerel hafızaya kaydedildi (Supabase pasif).`;
+            }
+        };
+
+        // SPA Navigation Helper
+        window.navigateTo = function(path) {
+            window.location.hash = path;
+            window.handleRoute();
+        };
+
+        // Create New Random Editor Path & Open IDE
+        window.createNewSiteAndOpenEditor = function() {
+            const randomPart1 = Math.floor(10000 + Math.random() * 90000);
+            const randomPart2 = Math.random().toString(36).substring(2, 12);
+            const editorPath = `/editor/uielements${randomPart1}?/htmlstrp/${randomPart2}`;
+            
+            currentEditorId = editorPath;
+            window.navigateTo(editorPath);
+        };
+
+        // Handle Router Views
+        window.handleRoute = function() {
+            const hash = window.location.hash.replace('#', '') || '/';
+            
+            const welcomeView = document.getElementById('welcome-view');
+            const ideView = document.getElementById('ide-view');
+            const sitesView = document.getElementById('sites-view');
+            const liveView = document.getElementById('live-site-view');
+            const helpView = document.getElementById('help-view');
+
+            // Hide all
+            [welcomeView, ideView, sitesView, liveView, helpView].forEach(v => v.classList.add('hidden'));
+
+            if (hash === '/' || hash === '/karsilama.html') {
+                welcomeView.classList.remove('hidden');
+            } else if (hash === '/help') {
+                helpView.classList.remove('hidden');
+            } else if (hash === '/sites') {
+                sitesView.classList.remove('hidden');
+                window.loadPublishedSites('all');
+            } else if (hash.includes('/sites/')) {
+                liveView.classList.remove('hidden');
+                const slug = hash.split('/sites/')[1];
+                window.loadLiveSite(slug);
+            } else if (hash.includes('/editor/')) {
+                ideView.classList.remove('hidden');
+                currentEditorId = hash;
+                document.getElementById('editor-slug-display').innerText = hash;
+                window.runCode();
+            } else {
+                welcomeView.classList.remove('hidden');
+            }
+        };
+
+        // Load Published Sites Directory
+        window.loadPublishedSites = function(filter) {
+            const container = document.getElementById('sites-grid');
+            container.innerHTML = '<p class="text-gh-muted text-xs font-mono col-span-full">Yükleniyor...</p>';
+
+            if (!supabaseClient) {
+                container.innerHTML = '<p class="text-rose-400 text-xs col-span-full">Supabase istemcisi bağlanamadı.</p>';
+                return;
+            }
+
+            supabaseClient
+                .from('deployed_sites')
+                .select('*')
+                .order('updated_at', { ascending: false })
+                .then(({ data, error }) => {
+                    if (error || !data) {
+                        container.innerHTML = `<p class="text-amber-400 text-xs col-span-full">Siteler çekilemedi: ${error?.message || 'Bilinmeyen hata'}</p>`;
+                        return;
+                    }
+
+                    let filtered = data;
+                    if (filter === 'opensource') filtered = data.filter(d => !d.is_private);
+                    if (filter === 'private') filtered = data.filter(d => d.is_private);
+
+                    if (filtered.length === 0) {
+                        container.innerHTML = '<p class="text-gh-muted text-xs col-span-full">Henüz yayınlanmış site bulunmuyor.</p>';
+                        return;
+                    }
+
+                    container.innerHTML = filtered.map(site => `
+                        <div class="bg-gh-card border border-gh-border rounded-xl p-4 flex flex-col justify-between gap-3 hover:border-gh-muted transition">
+                            <div class="space-y-2">
+                                <div class="flex items-center justify-between">
+                                    <h3 class="font-bold text-white text-sm truncate">${site.title || site.project_slug}</h3>
+                                    <span class="text-[10px] px-2 py-0.5 rounded-full font-mono ${site.is_private ? 'bg-amber-950 text-amber-400 border border-amber-800' : 'bg-emerald-950 text-emerald-400 border border-emerald-800'}">
+                                        ${site.is_private ? '🔒 Private' : '🌐 OpenSource'}
+                                    </span>
+                                </div>
+                                <p class="text-xs font-mono text-gh-blue truncate">slug: ${site.project_slug}</p>
+                                <p class="text-[11px] text-gh-muted">Lisans: ${site.license || 'MIT'}</p>
+                            </div>
+
+                            <div class="flex items-center gap-2 pt-2 border-t border-gh-border">
+                                <button onclick="window.navigateTo('/sites/${site.project_slug}')" class="flex-1 bg-gh-green hover:bg-gh-greenHover text-white text-xs py-1.5 rounded font-semibold text-center">
+                                    Canlı Gör
+                                </button>
+                                ${!site.is_private ? `
+                                    <button onclick="window.forkProjectToEditor('${site.project_slug}')" class="flex-1 bg-gh-btn hover:bg-gh-btnHover border border-gh-border text-gh-text text-xs py-1.5 rounded text-center">
+                                        👨‍💻 Kodu İncele
+                                    </button>
+                                ` : `
+                                    <span class="flex-1 text-center text-[10px] text-gh-muted italic">Kodlar Gizli</span>
+                                `}
+                            </div>
+                        </div>
+                    `).join('');
+                });
+        };
+
+        // Fork / Open Source Project in Editor
+        window.forkProjectToEditor = function(slug) {
+            supabaseClient
+                .from('deployed_sites')
+                .select('files')
+                .eq('project_slug', slug)
+                .single()
+                .then(({ data }) => {
+                    if (data && data.files) {
+                        fileSystem = data.files;
+                        window.fileSystem = fileSystem;
+                        window.createNewSiteAndOpenEditor();
+                        window.showToast("Proje kopyası editöre aktarıldı", "success");
+                    }
+                });
+        };
+
+        // Load Fullscreen Live Deployed Site with Realtime
+        window.loadLiveSite = function(slug) {
+            const iframe = document.getElementById('live-site-iframe');
+
+            function renderFiles(files) {
+                const indexFile = files.find(f => f.name === 'index.html');
+                if (!indexFile) {
+                    iframe.srcdoc = '<h2 style="color:red; text-align:center; padding-top:2rem;">index.html bulunamadı!</h2>';
+                    return;
+                }
+
+                let html = indexFile.content;
+                files.filter(f => f.name.endsWith('.css')).forEach(css => {
+                    const regex = new RegExp(`<link[^>]*href=["']${css.name}["'][^>]*>`, 'gi');
+                    html = html.replace(regex, `<style>\n${css.content}\n<\/style>`);
+                });
+                files.filter(f => f.name.endsWith('.js')).forEach(js => {
+                    const regex = new RegExp(`<script[^>]*src=["']${js.name}["'][^>]*>\\s*<\\/script>`, 'gi');
+                    html = html.replace(regex, `<script>\n${js.content}\n<\/script>`);
+                });
+
+                iframe.srcdoc = html;
+            }
+
+            // LocalStorage Fallback
+            const cached = localStorage.getItem(`deployed_site_${slug}`);
+            if (cached) {
+                try {
+                    const parsed = JSON.parse(cached);
+                    renderFiles(parsed.files || parsed);
+                } catch(e) {}
+            }
+
+            // Cloud Fetch
+            if (supabaseClient) {
+                supabaseClient
+                    .from('deployed_sites')
+                    .select('files')
+                    .eq('project_slug', slug)
+                    .single()
+                    .then(({ data }) => {
+                        if (data && data.files) renderFiles(data.files);
+                    });
+
+                // Clean old channel
+                if (currentRealtimeChannel) supabaseClient.removeChannel(currentRealtimeChannel);
+
+                // Subscribe Realtime WebSockets
+                currentRealtimeChannel = supabaseClient
+                    .channel(`public:deployed_sites:${slug}`)
+                    .on(
+                        'postgres_changes',
+                        { event: '*', schema: 'public', table: 'deployed_sites', filter: `project_slug=eq.${slug}` },
+                        (payload) => {
+                            if (payload.new && payload.new.files) {
+                                renderFiles(payload.new.files);
+                                window.showToast("⚡ Realtime Canlı Güncelleme Alındı!", "success");
+                            }
+                        }
+                    )
+                    .subscribe();
+            }
+        };
+
+        // Open My Projects Modal
+        window.openMyProjectsModal = function() {
+            const modal = document.getElementById('my-projects-modal');
+            const searchInput = document.getElementById('user-email-search');
+            searchInput.value = localStorage.getItem('user_email') || '';
+            modal.classList.remove('hidden');
+            if (searchInput.value) window.fetchUserProjects();
+        };
+
+        // Fetch User Saved Projects
+        window.fetchUserProjects = function() {
+            const email = document.getElementById('user-email-search').value.trim();
+            const container = document.getElementById('user-projects-list');
+            if (!email) {
+                container.innerHTML = '<p class="text-amber-400">Lütfen geçerli bir e-posta adresi girin.</p>';
+                return;
+            }
+
+            localStorage.setItem('user_email', email);
+            container.innerHTML = '<p class="text-gh-muted font-mono">Aranıyor...</p>';
+
+            if (!supabaseClient) return;
+
+            supabaseClient
+                .from('deployed_sites')
+                .select('*')
+                .eq('user_email', email)
+                .then(({ data, error }) => {
+                    if (error || !data || data.length === 0) {
+                        container.innerHTML = '<p class="text-gh-muted">Bu e-postaya ait kayıtlı proje bulunamadı.</p>';
+                        return;
+                    }
+
+                    container.innerHTML = data.map(proj => `
+                        <div class="p-2 bg-gh-bg border border-gh-border rounded flex justify-between items-center">
+                            <div>
+                                <p class="font-bold text-white">${proj.title || proj.project_slug}</p>
+                                <p class="text-[10px] text-gh-muted font-mono">slug: ${proj.project_slug}</p>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <button onclick="window.navigateTo('/sites/${proj.project_slug}'); window.closeModal('my-projects-modal');" class="px-2 py-1 bg-gh-green text-white text-[10px] rounded">Canlı</button>
+                                ${proj.editor_id ? `
+                                    <button onclick="window.navigateTo('${proj.editor_id}'); window.closeModal('my-projects-modal');" class="px-2 py-1 bg-gh-blue text-black font-bold text-[10px] rounded">Düzenle</button>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `).join('');
+                });
+        };
+
+        // Event Listeners for Editor
+        const editor = document.getElementById('code-editor');
+        
+        editor.addEventListener('input', () => {
+            const currentFile = fileSystem.find(f => f.id === activeFileId);
+            if (currentFile) currentFile.content = editor.value;
+            window.updateLineNumbers();
+        });
+
+        editor.addEventListener('keydown', (e) => {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = editor.selectionStart;
+                const end = editor.selectionEnd;
+
+                editor.value = editor.value.substring(0, start) + '  ' + editor.value.substring(end);
+                editor.selectionStart = editor.selectionEnd = start + 2;
+
+                const currentFile = fileSystem.find(f => f.id === activeFileId);
+                if (currentFile) currentFile.content = editor.value;
+                window.updateLineNumbers();
+            }
+        });
+
+        editor.addEventListener('scroll', () => {
+            document.getElementById('line-numbers').scrollTop = editor.scrollTop;
+        });
+
+        window.addEventListener('hashchange', window.handleRoute);
+
+        // App Init
+        window.addEventListener('DOMContentLoaded', () => {
+            window.renderFileTree();
+            window.selectFile(activeFileId);
+            window.handleRoute();
+        });
+    </script>
+</body>
+</html>
